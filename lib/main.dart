@@ -6,6 +6,7 @@ import 'package:foody_online_app/providers/app.dart';
 import 'package:foody_online_app/providers/auth.dart';
 import 'package:foody_online_app/providers/categoryprovider.dart';
 import 'package:foody_online_app/providers/my_provider.dart';
+import 'package:foody_online_app/providers/order_provider.dart';
 import 'package:foody_online_app/screens/splash.dart';
 import 'package:provider/provider.dart';
 
@@ -25,6 +26,7 @@ class FoodyOnlineApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => (GenerateMaps())),
         ChangeNotifierProvider(create: (_) => (MyProvider())),
         ChangeNotifierProvider(create: (_) => (AppProvider())),
+        ChangeNotifierProvider(create: (_) => (OrderProvider())),
         ChangeNotifierProvider(create: (_) => (CategoryProvider.initialize()))
       ],
       child: MaterialApp(

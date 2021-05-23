@@ -11,6 +11,7 @@ import 'package:foody_online_app/providers/my_provider.dart';
 import 'package:foody_online_app/screens/cart.dart';
 import 'package:foody_online_app/screens/featured_products.dart';
 import 'package:foody_online_app/screens/order_screen.dart';
+import 'package:foody_online_app/welcome/welcome.dart';
 import 'package:provider/provider.dart';
 
 class Menu extends StatefulWidget {
@@ -50,26 +51,40 @@ class _MenuState extends State<Menu> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              UserAccountsDrawerHeader(
-                accountName: Text(
-                  userDetails.snapshot.data()['name'],
-                  style: TextStyle(fontSize: 21),
-                ),
-                accountEmail: Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                  child: Text(
-                    userDetails.snapshot.data()['email'],
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ),
-              ),
+              userDetails.snapshot == null
+                  ? UserAccountsDrawerHeader(
+                      accountName: Text(
+                        'Name Loading..',
+                        style: TextStyle(fontSize: 21),
+                      ),
+                      accountEmail: Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          'Email Loading..',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    )
+                  : UserAccountsDrawerHeader(
+                      accountName: Text(
+                        userDetails.snapshot.data()['name'],
+                        style: TextStyle(fontSize: 21),
+                      ),
+                      accountEmail: Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          userDetails.snapshot.data()['email'],
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ),
               GestureDetector(
                 onTap: () {
-                  //changeScreen(context, EmployeeProfile());
+                  changeScreen(context, CartPage());
                 },
                 child: drawerItem(
-                  icon: Icons.person,
-                  name: "Profile",
+                  icon: Icons.shopping_cart_outlined,
+                  name: "My Cart",
                 ),
               ),
               GestureDetector(
@@ -78,7 +93,7 @@ class _MenuState extends State<Menu> {
                 },
                 child: drawerItem(
                   icon: Icons.card_travel,
-                  name: "Orders",
+                  name: "My Orders",
                 ),
               ),
               GestureDetector(
@@ -105,7 +120,7 @@ class _MenuState extends State<Menu> {
                 onTap: () {
                   setState(() {
                     _auth.signOut();
-                    changeScreenReplacement(context, Login());
+                    changeScreenReplacement(context, Welcome());
                   });
                 },
                 child: drawerItem(

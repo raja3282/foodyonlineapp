@@ -1,16 +1,36 @@
+import 'package:chips_choice/chips_choice.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:foody_online_app/constant/const.dart';
 import 'package:foody_online_app/helper/order_services.dart';
+import 'package:foody_online_app/providers/order_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
-class MyOrders extends StatelessWidget {
+class MyOrders extends StatefulWidget {
+  @override
+  _MyOrdersState createState() => _MyOrdersState();
+}
+
+class _MyOrdersState extends State<MyOrders> {
+  OrderServices _OrderServices = OrderServices();
+  User user = FirebaseAuth.instance.currentUser;
+
+  int tag = 0;
+  List<String> options = [
+    'All Orders',
+    'Ordered',
+    'Accepted',
+    'Picked Up',
+    'On the way',
+    'Delivered',
+    'Rejected',
+  ];
   @override
   Widget build(BuildContext context) {
-    OrderServices _OrderServices = OrderServices();
-    User user = FirebaseAuth.instance.currentUser;
+    var _orderProvider = Provider.of<OrderProvider>(context);
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: AppBar(
@@ -24,9 +44,40 @@ class MyOrders extends StatelessWidget {
       body: Column(
         children: [
           Container(
+            height: 56,
+            width: MediaQuery.of(context).size.width,
+            child: ChipsChoice<int>.single(
+              choiceActiveStyle: C2ChoiceStyle(
+                color: Colors.teal,
+              ),
+              choiceStyle: C2ChoiceStyle(
+                borderRadius: BorderRadius.all(Radius.circular(3)),
+              ),
+              value: tag,
+              onChanged: (val) => setState(() {
+                if (val == 0) {
+                  setState(() {
+                    _orderProvider.status = null;
+                  });
+                }
+                setState(() {
+                  tag = val;
+                  _orderProvider.filterOrder(options[val]);
+                });
+              }),
+              choiceItems: C2Choice.listFrom<int, String>(
+                source: options,
+                value: (i, v) => i,
+                label: (i, v) => v,
+              ),
+            ),
+          ),
+          Container(
             child: StreamBuilder<QuerySnapshot>(
               stream: _OrderServices.orders
                   .where('userId', isEqualTo: user.uid)
+                  .where('orderStatus',
+                      isEqualTo: tag > 0 ? _orderProvider.status : null)
                   .snapshots(),
               builder: (BuildContext context,
                   AsyncSnapshot<QuerySnapshot> snapshot) {
@@ -37,10 +88,12 @@ class MyOrders extends StatelessWidget {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
                 }
-                if (!snapshot.hasData) {
+                if (snapshot.data.size == 0) {
                   //TODO no order screen
                   return Center(
-                    child: Text('No Orders. Continue Shopping'),
+                    child: Text(tag > 0
+                        ? 'No ${options[tag]} orders'
+                        : 'No Orders. Continue Shopping'),
                   );
                 }
 
@@ -57,17 +110,13 @@ class MyOrders extends StatelessWidget {
                               leading: CircleAvatar(
                                 backgroundColor: Colors.white,
                                 radius: 14,
-                                child: Icon(
-                                  CupertinoIcons.square_list,
-                                  size: 18,
-                                  color: Colors.blue,
-                                ),
+                                child: _OrderServices.statusIcon(document),
                               ),
                               title: Text(
                                 document.data()['orderStatus'],
                                 style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.orangeAccent,
+                                    color: _OrderServices.statusColor(document),
                                     fontWeight: FontWeight.bold),
                               ),
                               subtitle: Text(
@@ -95,6 +144,91 @@ class MyOrders extends StatelessWidget {
                                 ],
                               ),
                             ),
+                            document.data()['orderStatus'] == 'Ordered'
+                                ? Container()
+                                : document.data()['orderStatus'] == 'Rejected'
+                                    ? Container()
+                                    : Padding(
+                                        padding: const EdgeInsets.only(
+                                            left: 8, right: 8),
+                                        child: ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                          child: ListTile(
+                                            tileColor: Colors.grey,
+                                            leading: CircleAvatar(
+                                                backgroundColor: Colors.white,
+                                                child: Image.network(
+                                                  document.data()['deliveryBoy']
+                                                      ['image'],
+                                                  fit: BoxFit.contain,
+                                                )),
+                                            title: Text(
+                                                document.data()['deliveryBoy']
+                                                    ['name'],
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                )),
+                                            subtitle: Text(
+                                                _OrderServices.statusComment(
+                                                    document),
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                )),
+                                            trailing: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                document.data()[
+                                                            'orderStatus'] ==
+                                                        'On the way'
+                                                    ? Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(4),
+                                                        ),
+                                                        child: IconButton(
+                                                          icon: Icon(Icons.map),
+                                                          color: Colors.green,
+                                                          onPressed: () {
+                                                            GeoPoint location =
+                                                                document.data()[
+                                                                        'deliveryBoy']
+                                                                    [
+                                                                    'location'];
+                                                            _OrderServices.launchMap(
+                                                                location,
+                                                                document.data()[
+                                                                        'deliveryBoy']
+                                                                    ['name']);
+                                                          },
+                                                        ),
+                                                      )
+                                                    : Container(),
+                                                Container(
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            4),
+                                                  ),
+                                                  child: IconButton(
+                                                    icon: Icon(Icons.phone),
+                                                    color: Colors.green,
+                                                    onPressed: () {
+                                                      _OrderServices.launchCall(
+                                                          'tel:${document.data()['deliveryBoy']['phone']}');
+                                                    },
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                             ExpansionTile(
                               title: Text(
                                 'Order details',

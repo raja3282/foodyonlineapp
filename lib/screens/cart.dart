@@ -10,6 +10,7 @@ import 'package:foody_online_app/models/cartModel.dart';
 import 'package:foody_online_app/providers/manageMaps.dart';
 import 'package:foody_online_app/providers/my_provider.dart';
 import 'package:foody_online_app/screens/menu.dart';
+import 'package:foody_online_app/screens/thankuPage.dart';
 import 'package:page_transition/page_transition.dart';
 
 import 'package:provider/provider.dart';
@@ -309,16 +310,33 @@ class _CartPageState extends State<CartPage> {
                                   color: Colors.redAccent,
                                   onPressed: () {
                                     provider.saveOrder(
-                                        _payable,
-                                        Provider.of<GenerateMaps>(context,
-                                                    listen: false)
-                                                .getMainAddress ??
-                                            Provider.of<GenerateMaps>(context,
-                                                    listen: false)
-                                                .getFinalAddress,
-                                        deliveryFee,
-                                        discount);
-                                    // Navigator.pop(context);
+                                      _payable,
+                                      Provider.of<GenerateMaps>(context,
+                                                  listen: false)
+                                              .getMainAddress ??
+                                          Provider.of<GenerateMaps>(context,
+                                                  listen: false)
+                                              .getFinalAddress,
+                                      deliveryFee,
+                                      discount,
+                                      Provider.of<GenerateMaps>(context,
+                                                  listen: false)
+                                              .getcoordinates2
+                                              .latitude ??
+                                          Provider.of<GenerateMaps>(context,
+                                                  listen: false)
+                                              .getcoordinates
+                                              .latitude,
+                                      Provider.of<GenerateMaps>(context,
+                                                  listen: false)
+                                              .getcoordinates2
+                                              .longitude ??
+                                          Provider.of<GenerateMaps>(context,
+                                                  listen: false)
+                                              .getcoordinates
+                                              .longitude,
+                                    );
+                                    changeScreenReplacement(context, ThankU());
 
                                     setState(() {});
                                   })

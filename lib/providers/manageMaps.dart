@@ -8,6 +8,9 @@ class GenerateMaps extends ChangeNotifier {
   String get getFinalAddress => finalAddress;
   Position position;
   geoCo.Coordinates coordinates;
+  geoCo.Coordinates get getcoordinates => coordinates;
+  geoCo.Coordinates coordinates2;
+  geoCo.Coordinates get getcoordinates2 => coordinates2;
   Position get getPosition => position;
   GoogleMapController googleMapController;
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{};
@@ -18,11 +21,12 @@ class GenerateMaps extends ChangeNotifier {
     var PositionData = await GeolocatorPlatform.instance.getCurrentPosition();
     final cords =
         geoCo.Coordinates(PositionData.latitude, PositionData.longitude);
-    coordinates = cords;
+
     var address =
         await geoCo.Geocoder.local.findAddressesFromCoordinates(cords);
     String mainAddress = address.first.addressLine;
     print(mainAddress);
+    coordinates = cords;
     finalAddress = mainAddress;
     notifyListeners();
   }
@@ -46,6 +50,7 @@ class GenerateMaps extends ChangeNotifier {
         mapType: MapType.normal,
         onTap: (loc) async {
           final cords = geoCo.Coordinates(loc.latitude, loc.longitude);
+          coordinates2 = cords;
           var address =
               await geoCo.Geocoder.local.findAddressesFromCoordinates(cords);
           countryName = address.first.countryName;

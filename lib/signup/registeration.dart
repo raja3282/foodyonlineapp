@@ -130,28 +130,37 @@ class _RegistrationState extends State<Registration> {
                 RoundedButton(
                   title: 'SignUp',
                   color: kcolor2,
-                  onPressed: () {
-                    setState(() {});
+                  onPressed: () async {
+                    setState(() {
+                      showSpinner = true;
+                    });
                     if (formkey.currentState.validate()) {
                       try {
-                        Provider.of<Authentication>(context, listen: false)
-                            .creteNewAccount(email, password.toString())
-                            .whenComplete(() {
+                        final newuser =
+                            await _auth.createUserWithEmailAndPassword(
+                                email: email, password: password.toString());
+
+                        if (newuser != null) {
+                          Provider.of<Authentication>(context, listen: false)
+                              .createUserRecord(email, name, password);
                           Navigator.pushReplacement(
                               context,
                               PageTransition(
                                   child: Menu(),
                                   type:
                                       PageTransitionType.leftToRightWithFade));
-                        });
-                        Provider.of<Authentication>(context, listen: false)
-                            .createUserRecord(email, name, password);
+                          showSpinner = false;
+                        }
                       } catch (e) {
+                        setState(() {
+                          showSpinner = false;
+                        });
                         print(e);
                         Toast.show(e.message, context,
                             duration: Toast.LENGTH_LONG, gravity: Toast.TOP);
                       }
                     } else {
+                      showSpinner = false;
                       return null;
                     }
                   },

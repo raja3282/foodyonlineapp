@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:foody_online_app/helper/order_services.dart';
 import 'package:foody_online_app/models/cartModel.dart';
 import 'package:foody_online_app/models/fooditemModel.dart';
-import 'package:foody_online_app/models/user_model.dart';
+import 'package:foody_online_app/providers/auth.dart';
 
 class MyProvider extends ChangeNotifier {
   OrderServices _orderServices = OrderServices();
@@ -19,7 +19,6 @@ class MyProvider extends ChangeNotifier {
   Category category;
 
   Future<List<Category>> getCategory() async {
-    //print('hello rana the great');
     QuerySnapshot query = await db.collection('category').get();
 
     query.docs.forEach((element) {
@@ -205,61 +204,6 @@ class MyProvider extends ChangeNotifier {
     return cartList.length;
   }
 
-  ////////////////////cancel order/////////////////////////////////////////
-  void cancelorder() {
-    cartList.clear();
-    newCartList.clear();
-    notifyListeners();
-    cart.doc(getCurrentUser()).delete();
-  }
-
-///////////////////////storing ids and quantities//////////////////////////////////////
-  List<String> cartIDsList = [];
-  List<String> newcartIDsList = [];
-  List<int> cartQuantityList = [];
-  List<int> newcartQuantityList = [];
-  List<String> getCartItemsIDs() {
-    for (int i = 0; i < cartList.length; i++) {
-      newcartIDsList.add(cartList[i].id);
-      cartIDsList = newcartIDsList;
-    }
-    return cartIDsList;
-  }
-
-  List<int> getQuantity() {
-    for (int i = 0; i < cartList.length; i++) {
-      newcartQuantityList.add(cartList[i].quantity);
-      cartQuantityList = newcartQuantityList;
-    }
-    return cartQuantityList;
-  }
-
-  //////////////////////////Add to db///////////////////////////////////////////////
-
-  // void addt(int total, loc) {
-  //   cartIDsList = getCartItemsIDs();
-  //   cartQuantityList = getQuantity();
-  //   try {
-  //     db.collection('onlineOrder').doc().set({
-  //       'orderby': UserId,
-  //       'products': cartIDsList,
-  //       'quantity': cartQuantityList,
-  //       'total': total,
-  //       'datetime': datetime,
-  //       // 'UID': Authentication().uid,
-  //       'UID': getCurrentUser(),
-  //       'location': loc,
-  //     });
-  //   } catch (e) {
-  //     print(e.toString());
-  //   }
-  //   cartIDsList.clear();
-  //   cartQuantityList.clear();
-  //   cartList.clear();
-  //   newCartList.clear();
-  //   newcartQuantityList.clear();
-  //   newcartIDsList.clear();
-  // }
   Future<void> checkData() async {
     final snapshot =
         await cart.doc(getCurrentUser()).collection('products').get();
@@ -280,7 +224,7 @@ class MyProvider extends ChangeNotifier {
     });
   }
 
-  saveOrder(int total, loc, delFee, discount) async {
+  saveOrder(int total, loc, delFee, discount, lat, lng) async {
     List listCart = [];
     List _newlistCart = [];
     QuerySnapshot snapshot =
@@ -295,13 +239,18 @@ class MyProvider extends ChangeNotifier {
         notifyListeners();
       }
     });
-
+    DocumentSnapshot snapshot2 =
+        await db.collection('onlineusers').doc(_auth.currentUser.email).get();
+    DocumentSnapshot snapshot3 =
+        await db.collection('boy').doc('alishah@gmail.com').get();
     _orderServices.saveOrder({
       'products': listCart,
       'userId': getCurrentUser(),
       'userEmail': UserId,
-      //'username': userList.name,
+      'username': snapshot2.data()['name'],
+      'userPhone': snapshot2.data()['phone'],
       'userAddress': loc,
+      'userLocation': GeoPoint(lat, lng),
       'deliverFee': delFee,
       'total': total,
       'discount': discount,
@@ -309,9 +258,11 @@ class MyProvider extends ChangeNotifier {
       'orderStatus': 'Ordered',
       'cod': 'cash on delivery',
       'deliveryBoy': {
-        'name': '',
-        'phone': '',
-        'location': '',
+        'name': snapshot3.data()['name'],
+        'phone': snapshot3.data()['mobile'],
+        'location': snapshot3.data()['location'],
+        'email': snapshot3.data()['email'],
+        'image': snapshot3.data()['imageUrl'],
       },
     }).then((value) {
       deleteCart().then((value) {
